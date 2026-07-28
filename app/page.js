@@ -1,61 +1,185 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Nav from '../components/Nav';
-import { supabase } from '../lib/supabaseClient';
+import Nav from '../../components/Nav';
+import { supabase } from '../../lib/supabaseClient';
 
-function daysUntil(dateStr) {
-  if (!dateStr) return null;
-  const diff = new Date(dateStr) - new Date();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-}
-
-function StatusBadge({ label, dateStr }) {
-  const days = daysUntil(dateStr);
-  if (days === null) return <span className="badge badge-warn">{label}: lipsă dată</span>;
-  if (days < 0) return <span className="badge badge-danger">{label}: expirat</span>;
-  if (days <= 30) return <span className="badge badge-warn">{label}: {days} zile</span>;
-  return <span className="badge badge-ok">{label}: OK</span>;
-}
-
-export default function Dashboard() {
+export default function PrintPage() {
   const [vehicles, setVehicles] = useState([]);
-  const [driversCount, setDriversCount] = useState(0);
-  const [tripsCount, setTripsCount] = useState(0);
+  const [vehicleId, setVehicleId] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [settings, setSettings] = useState(null);
+  const [trips, setTrips] = useState(null);
+  const [fuels, setFuels] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadData();
+    supabase.from('vehicles').select('*').order('plate_number').then(({ data }) => setVehicles(data || []));
+    supabase.from('settings').select('*').eq('id', 1).single().then(({ data }) => setSettings(data));
   }, []);
 
-  async function loadData() {
-    const { data: v } = await supabase.from('vehicles').select('*').order('plate_number');
-    setVehicles(v || []);
-    const { count: dCount } = await supabase.from('drivers').select('*', { count: 'exact', head: true });
-    setDriversCount(dCount || 0);
-    const { count: tCount } = await supabase.from('trip_sheets').select('*', { count: 'exact', head: true });
-    setTripsCount(tCount || 0);
+  const periodSelected = Boolean(startDate && endDate);
+
+  async function handleGenerate(e) {
+    e.preventDefault();
+    if (!periodSelected) return;
+    setError('');
+    setLoading(true);
+
+    let tripsQuery = supabase
+      .from('trip_sheets')
+      .select('*, vehicles(plate_number), drivers(full_name)')
+      .gte('trip_date', startDate)
+      .lte('trip_date', endDate)
+      .order('trip_date');
+    let fuelQuery = supabase
+      .from('fuel_logs')
+      .select('*, vehicles(plate_number), drivers(full_name)')
+      .gte('fuel_date', startDate)
+      .lte('fuel_date', endDate)
+      .order('fuel_date');
+
+    if (vehicleId !== 'all') {
+      tripsQuery = tripsQuery.eq('vehicle_id', vehicleId);
+      fuelQuery = fuelQuery.eq('vehicle_id', vehicleId);
+    }
+
+    const [{ data: t, error: tErr }, { data: f, error: fErr }] = await Promise.all([tripsQuery, fuelQuery]);
+
+    if (tErr || fErr) {
+      setError((tErr || fErr).message);
+      setLoading(false);
+      return;
+    }
+
+    setTrips(t || []);
+    setFuels(f || []);
+    setLoading(false);
   }
+
+  const totalKm = (trips || []).reduce((sum, t) => sum + (t.km_start != null && t.km_end != null ? t.km_end - t.km_start : 0), 0);
+  const totalLiters = (fuels || []).reduce((sum, f) => sum + (f.liters || 0), 0);
+  const selectedVehicle = vehicles.find((v) => v.id === vehicleId);
 
   return (
     <Nav>
-      <h1>Panou general</h1>
-      <div className="card">
-        <p><strong>{vehicles.length}</strong> mașini &nbsp;·&nbsp; <strong>{driversCount}</strong> șoferi &nbsp;·&nbsp; <strong>{tripsCount}</strong> foi de parcurs</p>
+      <h1>Tipărire raport pentru ANAF</h1>
+
+      <div className="card no-print">
+        <form onSubmit={handleGenerate}>
+          <label>
+            Mașină
+            <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
+              <option value="all">Toate mașinile</option>
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>{v.plate_number}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            De la data
+            <input type="date" required value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          </label>
+          <label>
+            Până la data
+            <input type="date" required value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          </label>
+          {error && <p className="error full">{error}</p>}
+          <div className="full actions">
+            <button className="btn-primary" type="submit" disabled={!periodSelected || loading}>
+              {loading ? 'Se generează...' : 'Generează raportul'}
+            </button>
+            {trips && <button type="button" onClick={() => window.print()}>Tipărește</button>}
+          </div>
+        </form>
       </div>
 
-      <h2>Stare documente mașini</h2>
-      {vehicles.length === 0 && <p>Nu ai adăugat încă nicio mașină. Mergi la secțiunea "Mașini".</p>}
-      {vehicles.map((v) => (
-        <div className="card" key={v.id}>
-          <strong>{v.plate_number}</strong>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-            <StatusBadge label="ITV" dateStr={v.itv_expiry} />
-            <StatusBadge label="Rovinietă" dateStr={v.rovinieta_expiry} />
-            <StatusBadge label="Asigurare" dateStr={v.insurance_expiry} />
-            <StatusBadge label="DSV" dateStr={v.dsv_expiry} />
+      {trips && (
+        <div className="card" style={{ marginTop: 24 }}>
+          <h2 style={{ marginTop: 0 }}>{settings?.company_name || 'Raport foi de parcurs'}</h2>
+          {settings?.cui && <p style={{ margin: 0, fontSize: 13 }}>CUI: {settings.cui}</p>}
+          {settings?.address && <p style={{ margin: 0, fontSize: 13 }}>{settings.address}</p>}
+          <p style={{ fontSize: 13, color: '#666' }}>
+            Perioadă: {startDate} → {endDate} &nbsp;|&nbsp; Mașină: {selectedVehicle ? selectedVehicle.plate_number : 'toate'}
+          </p>
+
+          <h2>Foi de parcurs</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Mașină</th>
+                <th>Șofer</th>
+                <th>Traseu</th>
+                <th>Cod UIT</th>
+                <th>Scop deplasare</th>
+                <th>Km start</th>
+                <th>Km stop</th>
+                <th>Km parcurși</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trips.map((t) => (
+                <tr key={t.id}>
+                  <td>{t.trip_date}</td>
+                  <td>{t.vehicles?.plate_number || '-'}</td>
+                  <td>{t.drivers?.full_name || '-'}</td>
+                  <td>{t.route}</td>
+                  <td>{t.uit_code || '-'}</td>
+                  <td>{t.trip_purpose || '-'}</td>
+                  <td>{t.km_start ?? '-'}</td>
+                  <td>{t.km_end ?? '-'}</td>
+                  <td>{t.km_start != null && t.km_end != null ? (t.km_end - t.km_start).toFixed(1) : '-'}</td>
+                </tr>
+              ))}
+              <tr style={{ fontWeight: 700 }}>
+                <td colSpan={8} style={{ textAlign: 'right' }}>Total km parcurși:</td>
+                <td>{totalKm.toFixed(1)} km</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>Alimentări</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Mașină</th>
+                <th>Șofer</th>
+                <th>Litri</th>
+                <th>Cost</th>
+                <th>Stație</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fuels.map((f) => (
+                <tr key={f.id}>
+                  <td>{f.fuel_date}</td>
+                  <td>{f.vehicles?.plate_number || '-'}</td>
+                  <td>{f.drivers?.full_name || '-'}</td>
+                  <td>{f.liters} l</td>
+                  <td>{f.cost != null ? f.cost + ' lei' : '-'}</td>
+                  <td>{f.station || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h2>Total perioadă</h2>
+          <p>
+            <strong>{totalKm.toFixed(1)} km</strong> parcurși &nbsp;·&nbsp;
+            <strong> {totalLiters.toFixed(1)} l</strong> combustibil alimentat &nbsp;·&nbsp;
+            <strong> {totalKm > 0 ? ((totalLiters / totalKm) * 100).toFixed(2) : '-'} l/100km</strong> consum mediu
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 60 }}>
+            <div>Întocmit: _______________________</div>
+            <div>Semnătură / Ștampilă: _______________________</div>
           </div>
         </div>
-      ))}
+      )}
     </Nav>
   );
 }
