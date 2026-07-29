@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Nav from '../../components/Nav';
 import { supabase } from '../../lib/supabaseClient';
-import { getDrivingDistanceKm } from '../../lib/googleMaps';
 
 const emptyForm = {
   vehicle_id: '',
@@ -12,8 +11,6 @@ const emptyForm = {
   departure_time: '',
   arrival_time: '',
   route: '',
-  departure_location_id: '',
-  destination_location_id: '',
   uit_code: '',
   trip_purpose: '',
   km_start: '',
@@ -27,12 +24,9 @@ export default function TripsPage() {
   const [trips, setTrips] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
-  const [locations, setLocations] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
-  const [distanceLoading, setDistanceLoading] = useState(false);
-  const [distanceError, setDistanceError] = useState('');
 
   useEffect(() => {
     loadLookups();
@@ -44,8 +38,6 @@ export default function TripsPage() {
     setVehicles(v || []);
     const { data: d } = await supabase.from('drivers').select('id, full_name').order('full_name');
     setDrivers(d || []);
-    const { data: l } = await supabase.from('locations').select('id, name, address').order('name');
-    setLocations(l || []);
   }
 
   async function load() {
@@ -82,8 +74,6 @@ export default function TripsPage() {
       departure_time: form.departure_time || null,
       arrival_time: form.arrival_time || null,
       route: form.route,
-      departure_location_id: form.departure_location_id || null,
-      destination_location_id: form.destination_location_id || null,
       uit_code: form.uit_code,
       trip_purpose: form.trip_purpose,
       km_start: form.km_start ? Number(form.km_start) : null,
@@ -118,8 +108,6 @@ export default function TripsPage() {
       departure_time: t.departure_time || '',
       arrival_time: t.arrival_time || '',
       route: t.route || '',
-      departure_location_id: t.departure_location_id || '',
-      destination_location_id: t.destination_location_id || '',
       uit_code: t.uit_code || '',
       trip_purpose: t.trip_purpose || '',
       km_start: t.km_start ?? '',
@@ -140,28 +128,6 @@ export default function TripsPage() {
   function cancelEdit() {
     setForm(emptyForm);
     setEditingId(null);
-  }
-
-  async function handleCalculateDistance() {
-    setDistanceError('');
-    const origin = locations.find((l) => l.id === form.departure_location_id);
-    const destination = locations.find((l) => l.id === form.destination_location_id);
-    if (!origin || !destination) {
-      setDistanceError('Alege atât locul de plecare, cât și destinația.');
-      return;
-    }
-    setDistanceLoading(true);
-    try {
-      const km = await getDrivingDistanceKm(origin.address, destination.address);
-      setForm((f) => ({
-        ...f,
-        km_traveled: km.toFixed(1),
-        route: f.route ? f.route : `${origin.name} - ${destination.name}`,
-      }));
-    } catch (err) {
-      setDistanceError(err.message);
-    }
-    setDistanceLoading(false);
   }
 
   return (
@@ -205,30 +171,6 @@ export default function TripsPage() {
             Traseu (plecare - destinație)
             <input name="route" value={form.route} onChange={handleChange} placeholder="ex: Brăila - Galați" />
           </label>
-          <label>
-            Loc plecare
-            <select name="departure_location_id" value={form.departure_location_id} onChange={handleChange}>
-              <option value="">Alege locul de plecare</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Loc descărcare (destinație)
-            <select name="destination_location_id" value={form.destination_location_id} onChange={handleChange}>
-              <option value="">Alege destinația</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
-            </select>
-          </label>
-          <div className="full" style={{ marginTop: -6 }}>
-            <button type="button" onClick={handleCalculateDistance} disabled={distanceLoading}>
-              {distanceLoading ? 'Se calculează...' : 'Calculează distanța (Google Maps)'}
-            </button>
-            {distanceError && <p className="error" style={{ marginTop: 6 }}>{distanceError}</p>}
-          </div>
           <label>
             Cod UIT
             <textarea
