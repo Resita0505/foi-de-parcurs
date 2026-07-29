@@ -6,6 +6,9 @@ import { supabase } from '../../lib/supabaseClient';
 
 const emptyForm = {
   plate_number: '',
+  brand: '',
+  model: '',
+  category: '',
   consumption_norm: '',
   dsv_authorization_number: '',
   dsv_expiry: '',
@@ -66,6 +69,9 @@ export default function VehiclesPage() {
   function handleEdit(v) {
     setForm({
       plate_number: v.plate_number || '',
+      brand: v.brand || '',
+      model: v.model || '',
+      category: v.category || '',
       consumption_norm: v.consumption_norm ?? '',
       dsv_authorization_number: v.dsv_authorization_number || '',
       dsv_expiry: v.dsv_expiry || '',
@@ -97,6 +103,30 @@ export default function VehiclesPage() {
           <label className="full">
             Număr înmatriculare
             <input name="plate_number" required value={form.plate_number} onChange={handleChange} />
+          </label>
+          <label>
+            Marcă
+            <input name="brand" value={form.brand} onChange={handleChange} placeholder="ex: Mercedes" />
+          </label>
+          <label>
+            Model
+            <input name="model" value={form.model} onChange={handleChange} placeholder="ex: Actros" />
+          </label>
+          <label>
+            Categorie
+            <select name="category" value={form.category} onChange={handleChange}>
+              <option value="">Alege categoria</option>
+              <option value="B">B</option>
+              <option value="BE">BE</option>
+              <option value="C">C</option>
+              <option value="C1">C1</option>
+              <option value="CE">CE</option>
+              <option value="C1E">C1E</option>
+              <option value="D">D</option>
+              <option value="D1">D1</option>
+              <option value="DE">DE</option>
+              <option value="D1E">D1E</option>
+            </select>
           </label>
           <label>
             Consum normat (l/100km)
@@ -135,6 +165,8 @@ export default function VehiclesPage() {
         <thead>
           <tr>
             <th>Nr. înmatriculare</th>
+            <th>Marcă / Model</th>
+            <th>Categorie</th>
             <th>Consum normat</th>
             <th>DSV</th>
             <th>ITV</th>
@@ -147,6 +179,8 @@ export default function VehiclesPage() {
           {vehicles.map((v) => (
             <tr key={v.id}>
               <td>{v.plate_number}</td>
+              <td>{[v.brand, v.model].filter(Boolean).join(' ') || '-'}</td>
+              <td>{v.category || '-'}</td>
               <td>{v.consumption_norm ?? '-'} l/100km</td>
               <td>{v.dsv_expiry || '-'}</td>
               <td>{v.itv_expiry || '-'}</td>
