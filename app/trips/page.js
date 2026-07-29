@@ -215,10 +215,10 @@ export default function TripsPage() {
             <th>Mașină</th>
             <th>Șofer</th>
             <th>Traseu</th>
-            <th>Cod UIT</th>
             <th>Scop</th>
             <th>Km parcurși</th>
             <th>Combustibil</th>
+            <th>Cod UIT</th>
             <th></th>
           </tr>
         </thead>
@@ -231,10 +231,10 @@ export default function TripsPage() {
               <td>{t.vehicles?.plate_number || '-'}</td>
               <td>{t.drivers?.full_name || '-'}</td>
               <td>{t.route}</td>
-              <td>{t.uit_code || '-'}</td>
               <td>{t.trip_purpose || '-'}</td>
               <td>{t.km_traveled != null ? t.km_traveled.toFixed(1) : (t.km_start != null && t.km_end != null ? (t.km_end - t.km_start).toFixed(1) : '-')}</td>
               <td>{t.fuel_added ?? '-'} l</td>
+              <td style={{ maxWidth: '36ch', wordBreak: 'break-all', fontFamily: 'monospace' }}>{t.uit_code || '-'}</td>
               <td className="actions">
                 <button onClick={() => handleEdit(t)}>Editează</button>
                 <button className="btn-danger" onClick={() => handleDelete(t.id)}>Șterge</button>
