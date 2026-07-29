@@ -59,7 +59,11 @@ export default function PrintPage() {
     setLoading(false);
   }
 
-  const totalKm = (trips || []).reduce((sum, t) => sum + (t.km_start != null && t.km_end != null ? t.km_end - t.km_start : 0), 0);
+  const totalKm = (trips || []).reduce((sum, t) => {
+    if (t.km_traveled != null) return sum + t.km_traveled;
+    if (t.km_start != null && t.km_end != null) return sum + (t.km_end - t.km_start);
+    return sum;
+  }, 0);
   const totalLiters = (fuels || []).reduce((sum, f) => sum + (f.liters || 0), 0);
   const selectedVehicle = vehicles.find((v) => v.id === vehicleId);
 
@@ -131,7 +135,7 @@ export default function PrintPage() {
                   <td>{t.trip_purpose || '-'}</td>
                   <td>{t.km_start ?? '-'}</td>
                   <td>{t.km_end ?? '-'}</td>
-                  <td>{t.km_start != null && t.km_end != null ? (t.km_end - t.km_start).toFixed(1) : '-'}</td>
+                  <td>{t.km_traveled != null ? t.km_traveled.toFixed(1) : (t.km_start != null && t.km_end != null ? (t.km_end - t.km_start).toFixed(1) : '-')}</td>
                 </tr>
               ))}
               <tr style={{ fontWeight: 700 }}>
