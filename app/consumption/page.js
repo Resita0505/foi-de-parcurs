@@ -27,7 +27,7 @@ export default function ConsumptionPage() {
 
     let tripsQuery = supabase
       .from('trip_sheets')
-      .select('vehicle_id, km_start, km_end, trip_date')
+      .select('vehicle_id, km_start, km_end, km_traveled, trip_date')
       .gte('trip_date', startDate)
       .lte('trip_date', endDate);
     let fuelQuery = supabase
@@ -56,7 +56,9 @@ export default function ConsumptionPage() {
     };
 
     (trips || []).forEach((t) => {
-      if (t.km_start != null && t.km_end != null) {
+      if (t.km_traveled != null) {
+        ensure(t.vehicle_id).km += t.km_traveled;
+      } else if (t.km_start != null && t.km_end != null) {
         ensure(t.vehicle_id).km += t.km_end - t.km_start;
       }
     });
