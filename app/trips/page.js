@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Nav from '../../components/Nav';
 import { supabase } from '../../lib/supabaseClient';
+import { getDrivingDistanceKm } from '../../lib/googleMaps';
 
 const emptyForm = {
   vehicle_id: '',
@@ -11,6 +12,8 @@ const emptyForm = {
   departure_time: '',
   arrival_time: '',
   route: '',
+  departure_location_id: '',
+  destination_location_id: '',
   uit_code: '',
   trip_purpose: '',
   km_start: '',
@@ -24,9 +27,12 @@ export default function TripsPage() {
   const [trips, setTrips] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
+  const [distanceLoading, setDistanceLoading] = useState(false);
+  const [distanceError, setDistanceError] = useState('');
 
   useEffect(() => {
     loadLookups();
@@ -38,6 +44,8 @@ export default function TripsPage() {
     setVehicles(v || []);
     const { data: d } = await supabase.from('drivers').select('id, full_name').order('full_name');
     setDrivers(d || []);
+    const { data: l } = await supabase.from('locations').select('id, name, address').order('name');
+    setLocations(l || []);
   }
 
   async function load() {
@@ -50,7 +58,18 @@ export default function TripsPage() {
   }
 
   function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((f) => {
+      const updated = { ...f, [name]: value };
+      if (name === 'km_start' || name === 'km_end') {
+        const start = name === 'km_start' ? value : f.km_start;
+        const end = name === 'km_end' ? value : f.km_end;
+        if (start !== '' && end !== '' && !isNaN(start) && !isNaN(end) && Number(end) >= Number(start)) {
+          updated.km_traveled = String(Number(end) - Number(start));
+        }
+      }
+      return updated;
+    });
   }
 
   async function handleSubmit(e) {
@@ -63,6 +82,8 @@ export default function TripsPage() {
       departure_time: form.departure_time || null,
       arrival_time: form.arrival_time || null,
       route: form.route,
+      departure_location_id: form.departure_location_id || null,
+      destination_location_id: form.destination_location_id || null,
       uit_code: form.uit_code,
       trip_purpose: form.trip_purpose,
       km_start: form.km_start ? Number(form.km_start) : null,
@@ -97,6 +118,8 @@ export default function TripsPage() {
       departure_time: t.departure_time || '',
       arrival_time: t.arrival_time || '',
       route: t.route || '',
+      departure_location_id: t.departure_location_id || '',
+      destination_location_id: t.destination_location_id || '',
       uit_code: t.uit_code || '',
       trip_purpose: t.trip_purpose || '',
       km_start: t.km_start ?? '',
@@ -117,6 +140,28 @@ export default function TripsPage() {
   function cancelEdit() {
     setForm(emptyForm);
     setEditingId(null);
+  }
+
+  async function handleCalculateDistance() {
+    setDistanceError('');
+    const origin = locations.find((l) => l.id === form.departure_location_id);
+    const destination = locations.find((l) => l.id === form.destination_location_id);
+    if (!origin || !destination) {
+      setDistanceError('Alege atât locul de plecare, cât și destinația.');
+      return;
+    }
+    setDistanceLoading(true);
+    try {
+      const km = await getDrivingDistanceKm(origin.address, destination.address);
+      setForm((f) => ({
+        ...f,
+        km_traveled: km.toFixed(1),
+        route: f.route ? f.route : `${origin.name} - ${destination.name}`,
+      }));
+    } catch (err) {
+      setDistanceError(err.message);
+    }
+    setDistanceLoading(false);
   }
 
   return (
@@ -161,6 +206,30 @@ export default function TripsPage() {
             <input name="route" value={form.route} onChange={handleChange} placeholder="ex: Brăila - Galați" />
           </label>
           <label>
+            Loc plecare
+            <select name="departure_location_id" value={form.departure_location_id} onChange={handleChange}>
+              <option value="">Alege locul de plecare</option>
+              {locations.map((l) => (
+                <option key={l.id} value={l.id}>{l.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Loc descărcare (destinație)
+            <select name="destination_location_id" value={form.destination_location_id} onChange={handleChange}>
+              <option value="">Alege destinația</option>
+              {locations.map((l) => (
+                <option key={l.id} value={l.id}>{l.name}</option>
+              ))}
+            </select>
+          </label>
+          <div className="full" style={{ marginTop: -6 }}>
+            <button type="button" onClick={handleCalculateDistance} disabled={distanceLoading}>
+              {distanceLoading ? 'Se calculează...' : 'Calculează distanța (Google Maps)'}
+            </button>
+            {distanceError && <p className="error" style={{ marginTop: 6 }}>{distanceError}</p>}
+          </div>
+          <label>
             Cod UIT
             <textarea
               name="uit_code"
@@ -186,7 +255,7 @@ export default function TripsPage() {
             <input name="km_end" type="number" step="0.1" value={form.km_end} onChange={handleChange} />
           </label>
           <label>
-            Km efectuați <span style={{ fontWeight: 400, color: '#888' }}>(dacă nu vrei km start/stop)</span>
+            Km efectuați <span style={{ fontWeight: 400, color: '#888' }}>(calculat automat din start/stop, sau introdu manual)</span>
             <input name="km_traveled" type="number" step="0.1" value={form.km_traveled} onChange={handleChange} placeholder="ex: 120" />
           </label>
           <label>
