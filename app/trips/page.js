@@ -8,6 +8,8 @@ const emptyForm = {
   vehicle_id: '',
   driver_id: '',
   trip_date: '',
+  departure_time: '',
+  arrival_time: '',
   route: '',
   uit_code: '',
   trip_purpose: '',
@@ -58,6 +60,8 @@ export default function TripsPage() {
       vehicle_id: form.vehicle_id || null,
       driver_id: form.driver_id || null,
       trip_date: form.trip_date || null,
+      departure_time: form.departure_time || null,
+      arrival_time: form.arrival_time || null,
       route: form.route,
       uit_code: form.uit_code,
       trip_purpose: form.trip_purpose,
@@ -90,6 +94,8 @@ export default function TripsPage() {
       vehicle_id: t.vehicle_id || '',
       driver_id: t.driver_id || '',
       trip_date: t.trip_date || '',
+      departure_time: t.departure_time || '',
+      arrival_time: t.arrival_time || '',
       route: t.route || '',
       uit_code: t.uit_code || '',
       trip_purpose: t.trip_purpose || '',
@@ -142,13 +148,30 @@ export default function TripsPage() {
             Data
             <input name="trip_date" type="date" required value={form.trip_date} onChange={handleChange} />
           </label>
+          <label>
+            Ora plecării
+            <input name="departure_time" type="time" value={form.departure_time} onChange={handleChange} />
+          </label>
+          <label>
+            Ora sosirii
+            <input name="arrival_time" type="time" value={form.arrival_time} onChange={handleChange} />
+          </label>
           <label className="full">
             Traseu (plecare - destinație)
             <input name="route" value={form.route} onChange={handleChange} placeholder="ex: Brăila - Galați" />
           </label>
           <label>
             Cod UIT
-            <input name="uit_code" value={form.uit_code} onChange={handleChange} placeholder="ex: RO3F1A2B3C" />
+            <textarea
+              name="uit_code"
+              value={form.uit_code}
+              onChange={handleChange}
+              placeholder="ex: RO3F1A2B3C..."
+              cols={68}
+              rows={2}
+              wrap="hard"
+              style={{ fontFamily: 'monospace', resize: 'vertical' }}
+            />
           </label>
           <label>
             Scopul deplasării
@@ -187,6 +210,8 @@ export default function TripsPage() {
         <thead>
           <tr>
             <th>Data</th>
+            <th>Plecare</th>
+            <th>Sosire</th>
             <th>Mașină</th>
             <th>Șofer</th>
             <th>Traseu</th>
@@ -201,6 +226,8 @@ export default function TripsPage() {
           {trips.map((t) => (
             <tr key={t.id}>
               <td>{t.trip_date}</td>
+              <td>{t.departure_time || '-'}</td>
+              <td>{t.arrival_time || '-'}</td>
               <td>{t.vehicles?.plate_number || '-'}</td>
               <td>{t.drivers?.full_name || '-'}</td>
               <td>{t.route}</td>
