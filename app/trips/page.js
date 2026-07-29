@@ -13,6 +13,7 @@ const emptyForm = {
   trip_purpose: '',
   km_start: '',
   km_end: '',
+  km_traveled: '',
   fuel_added: '',
   notes: '',
 };
@@ -62,6 +63,7 @@ export default function TripsPage() {
       trip_purpose: form.trip_purpose,
       km_start: form.km_start ? Number(form.km_start) : null,
       km_end: form.km_end ? Number(form.km_end) : null,
+      km_traveled: form.km_traveled ? Number(form.km_traveled) : null,
       fuel_added: form.fuel_added ? Number(form.fuel_added) : null,
       notes: form.notes,
     };
@@ -93,6 +95,7 @@ export default function TripsPage() {
       trip_purpose: t.trip_purpose || '',
       km_start: t.km_start ?? '',
       km_end: t.km_end ?? '',
+      km_traveled: t.km_traveled ?? '',
       fuel_added: t.fuel_added ?? '',
       notes: t.notes || '',
     });
@@ -152,12 +155,16 @@ export default function TripsPage() {
             <input name="trip_purpose" value={form.trip_purpose} onChange={handleChange} placeholder="ex: transport marfă / aprovizionare" />
           </label>
           <label>
-            Km start
+            Km start <span style={{ fontWeight: 400, color: '#888' }}>(opțional)</span>
             <input name="km_start" type="number" step="0.1" value={form.km_start} onChange={handleChange} />
           </label>
           <label>
-            Km stop
+            Km stop <span style={{ fontWeight: 400, color: '#888' }}>(opțional)</span>
             <input name="km_end" type="number" step="0.1" value={form.km_end} onChange={handleChange} />
+          </label>
+          <label>
+            Km efectuați <span style={{ fontWeight: 400, color: '#888' }}>(dacă nu vrei km start/stop)</span>
+            <input name="km_traveled" type="number" step="0.1" value={form.km_traveled} onChange={handleChange} placeholder="ex: 120" />
           </label>
           <label>
             Combustibil alimentat (litri)
@@ -199,7 +206,7 @@ export default function TripsPage() {
               <td>{t.route}</td>
               <td>{t.uit_code || '-'}</td>
               <td>{t.trip_purpose || '-'}</td>
-              <td>{t.km_start != null && t.km_end != null ? (t.km_end - t.km_start).toFixed(1) : '-'}</td>
+              <td>{t.km_traveled != null ? t.km_traveled.toFixed(1) : (t.km_start != null && t.km_end != null ? (t.km_end - t.km_start).toFixed(1) : '-')}</td>
               <td>{t.fuel_added ?? '-'} l</td>
               <td className="actions">
                 <button onClick={() => handleEdit(t)}>Editează</button>
