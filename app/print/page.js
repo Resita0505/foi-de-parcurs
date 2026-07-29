@@ -113,6 +113,8 @@ export default function PrintPage() {
                 <th>Mașină</th>
                 <th>Șofer</th>
                 <th>Traseu</th>
+                <th>Cod UIT</th>
+                <th>Scop deplasare</th>
                 <th>Km start</th>
                 <th>Km stop</th>
                 <th>Km parcurși</th>
@@ -125,11 +127,17 @@ export default function PrintPage() {
                   <td>{t.vehicles?.plate_number || '-'}</td>
                   <td>{t.drivers?.full_name || '-'}</td>
                   <td>{t.route}</td>
+                  <td>{t.uit_code || '-'}</td>
+                  <td>{t.trip_purpose || '-'}</td>
                   <td>{t.km_start ?? '-'}</td>
                   <td>{t.km_end ?? '-'}</td>
                   <td>{t.km_start != null && t.km_end != null ? (t.km_end - t.km_start).toFixed(1) : '-'}</td>
                 </tr>
               ))}
+              <tr style={{ fontWeight: 700 }}>
+                <td colSpan={8} style={{ textAlign: 'right' }}>Total km parcurși:</td>
+                <td>{totalKm.toFixed(1)} km</td>
+              </tr>
             </tbody>
           </table>
 
