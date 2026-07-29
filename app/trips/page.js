@@ -9,6 +9,8 @@ const emptyForm = {
   driver_id: '',
   trip_date: '',
   route: '',
+  uit_code: '',
+  trip_purpose: '',
   km_start: '',
   km_end: '',
   fuel_added: '',
@@ -56,6 +58,8 @@ export default function TripsPage() {
       driver_id: form.driver_id || null,
       trip_date: form.trip_date || null,
       route: form.route,
+      uit_code: form.uit_code,
+      trip_purpose: form.trip_purpose,
       km_start: form.km_start ? Number(form.km_start) : null,
       km_end: form.km_end ? Number(form.km_end) : null,
       fuel_added: form.fuel_added ? Number(form.fuel_added) : null,
@@ -85,6 +89,8 @@ export default function TripsPage() {
       driver_id: t.driver_id || '',
       trip_date: t.trip_date || '',
       route: t.route || '',
+      uit_code: t.uit_code || '',
+      trip_purpose: t.trip_purpose || '',
       km_start: t.km_start ?? '',
       km_end: t.km_end ?? '',
       fuel_added: t.fuel_added ?? '',
@@ -138,6 +144,14 @@ export default function TripsPage() {
             <input name="route" value={form.route} onChange={handleChange} placeholder="ex: Brăila - Galați" />
           </label>
           <label>
+            Cod UIT
+            <input name="uit_code" value={form.uit_code} onChange={handleChange} placeholder="ex: RO3F1A2B3C" />
+          </label>
+          <label>
+            Scopul deplasării
+            <input name="trip_purpose" value={form.trip_purpose} onChange={handleChange} placeholder="ex: transport marfă / aprovizionare" />
+          </label>
+          <label>
             Km start
             <input name="km_start" type="number" step="0.1" value={form.km_start} onChange={handleChange} />
           </label>
@@ -169,6 +183,8 @@ export default function TripsPage() {
             <th>Mașină</th>
             <th>Șofer</th>
             <th>Traseu</th>
+            <th>Cod UIT</th>
+            <th>Scop</th>
             <th>Km parcurși</th>
             <th>Combustibil</th>
             <th></th>
@@ -181,6 +197,8 @@ export default function TripsPage() {
               <td>{t.vehicles?.plate_number || '-'}</td>
               <td>{t.drivers?.full_name || '-'}</td>
               <td>{t.route}</td>
+              <td>{t.uit_code || '-'}</td>
+              <td>{t.trip_purpose || '-'}</td>
               <td>{t.km_start != null && t.km_end != null ? (t.km_end - t.km_start).toFixed(1) : '-'}</td>
               <td>{t.fuel_added ?? '-'} l</td>
               <td className="actions">
