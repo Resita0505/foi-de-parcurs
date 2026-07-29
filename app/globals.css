@@ -10,9 +10,19 @@ body {
 }
 
 .container {
-  max-width: 960px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 24px 16px 60px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.table-scroll table {
+  margin-top: 0;
+  min-width: 1100px;
 }
 
 .navbar {
