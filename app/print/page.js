@@ -134,8 +134,8 @@ export default function PrintPage() {
                   <td>{t.arrival_time || '-'}</td>
                   <td>{t.vehicles?.plate_number || '-'}</td>
                   <td>{t.drivers?.full_name || '-'}</td>
-                  <td>{t.route}</td>
-                  <td>{t.uit_code || '-'}</td>
+                  <td style={{ maxWidth: '20ch', wordBreak: 'break-all' }}>{t.route}</td>
+                  <td style={{ maxWidth: '34ch', wordBreak: 'break-all', fontFamily: 'monospace' }}>{t.uit_code || '-'}</td>
                   <td>{t.trip_purpose || '-'}</td>
                   <td>{t.km_start ?? '-'}</td>
                   <td>{t.km_end ?? '-'}</td>
