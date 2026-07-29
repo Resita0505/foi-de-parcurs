@@ -206,6 +206,7 @@ export default function TripsPage() {
       </div>
 
       <h2>Istoric foi de parcurs</h2>
+      <div className="table-scroll">
       <table>
         <thead>
           <tr>
@@ -243,6 +244,7 @@ export default function TripsPage() {
           ))}
         </tbody>
       </table>
+      </div>
     </Nav>
   );
 }
