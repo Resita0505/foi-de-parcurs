@@ -114,6 +114,8 @@ export default function PrintPage() {
             <thead>
               <tr>
                 <th>Data</th>
+                <th>Plecare</th>
+                <th>Sosire</th>
                 <th>Mașină</th>
                 <th>Șofer</th>
                 <th>Traseu</th>
@@ -128,6 +130,8 @@ export default function PrintPage() {
               {trips.map((t) => (
                 <tr key={t.id}>
                   <td>{t.trip_date}</td>
+                  <td>{t.departure_time || '-'}</td>
+                  <td>{t.arrival_time || '-'}</td>
                   <td>{t.vehicles?.plate_number || '-'}</td>
                   <td>{t.drivers?.full_name || '-'}</td>
                   <td>{t.route}</td>
@@ -139,7 +143,7 @@ export default function PrintPage() {
                 </tr>
               ))}
               <tr style={{ fontWeight: 700 }}>
-                <td colSpan={8} style={{ textAlign: 'right' }}>Total km parcurși:</td>
+                <td colSpan={10} style={{ textAlign: 'right' }}>Total km parcurși:</td>
                 <td>{totalKm.toFixed(1)} km</td>
               </tr>
             </tbody>
